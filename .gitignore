@@ -1,0 +1,10 @@
+node_modules
+.idea
+.DS_Store
+*-lock.json
+yarn.lock
+dist
+
+.env
+
+!.env.example
