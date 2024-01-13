@@ -7,6 +7,8 @@ import {Role} from '@/user/entities/role.entity'
 import {Permission} from '@/user/entities/permission.entity'
 import { RedisModule } from './redis/redis.module';
 import { EmailModule } from './email/email.module';
+import {JwtModule} from "@nestjs/jwt";
+import {JwtModuleAsyncOptions} from "@nestjs/jwt/dist/interfaces/jwt-module-options.interface";
 
 @Module({
     imports: [
@@ -32,6 +34,18 @@ import { EmailModule } from './email/email.module';
             },
             inject: [ConfigService]
         } as TypeOrmModuleAsyncOptions),
+        JwtModule.registerAsync({
+            global: true,
+            useFactory(configService: ConfigService) {
+                return {
+                    secret: configService.get('JWT_SECRET'),
+                    signOptions: {
+                        expiresIn: configService.get('JWT_ACCESS_TOKEN_EXPIRE_TIME')
+                    }
+                }
+            },
+            inject: [ConfigService]
+        } as JwtModuleAsyncOptions),
         UserModule,
         RedisModule,
         EmailModule,
