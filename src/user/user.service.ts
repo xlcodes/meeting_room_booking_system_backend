@@ -261,6 +261,15 @@ export class UserService {
 
         const {pageNo, pageSize, username, nickName, email} = params
 
+        if(pageNo < 1) {
+            throw new HttpException('pageNo 不能小于等于0', HttpStatus.BAD_REQUEST)
+        }
+
+        if(pageSize <= 0) {
+            throw new HttpException('pageSize 不能小于等于0', HttpStatus.BAD_REQUEST)
+        }
+
+
         const skipCount = (pageNo - 1) * pageSize
 
         const condition: Record<string, any> = {}
@@ -277,18 +286,23 @@ export class UserService {
             condition.email = Like(`%${email}%`)
         }
 
-        const [users, totalCount] = await this.userRepository.findAndCount({
-            select: ['id', 'username', 'nickName', 'email', 'phoneNumber', 'isFrozen', 'headPic', 'createTime'],
-            skip: skipCount,
-            take: pageSize,
-            where: condition
-        } as FindManyOptions);
+        try {
+            const [users, totalCount] = await this.userRepository.findAndCount({
+                select: ['id', 'username', 'nickName', 'email', 'phoneNumber', 'isFrozen', 'headPic', 'createTime'],
+                skip: skipCount,
+                take: pageSize,
+                where: condition
+            } as FindManyOptions);
 
-        return {
-            users,
-            totalCount,
-            pageNo,
-            pageSize,
+            return {
+                users,
+                totalCount,
+                pageNo,
+                pageSize,
+            }
+        } catch (err) {
+            this.logger.error(err, 'UserService')
+            throw new HttpException('获取用户列表失败！', HttpStatus.BAD_REQUEST)
         }
     }
 }

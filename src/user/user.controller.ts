@@ -291,9 +291,9 @@ export class UserController {
     async list(
         @Query('pageNo', new DefaultValuePipe(1), generateParseIntPipe('pageNo')) pageNo: number,
         @Query('pageSize', new DefaultValuePipe(2), generateParseIntPipe('pageSize')) pageSize: number,
-        @Query('username') username: string,
-        @Query('email') email: string,
-        @Query('nickName') nickName: string,
+        @Query('username') username?: string,
+        @Query('email') email?: string,
+        @Query('nickName') nickName?: string,
     ) {
         return await this.userService.findUsersByPage({pageNo, pageSize, username, email, nickName})
     }

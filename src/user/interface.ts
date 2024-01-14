@@ -12,7 +12,7 @@ export interface UserRefreshTokenOpt {
 export interface FindUsersByPageParams {
     pageNo: number
     pageSize: number
-    username: string
-    nickName: string
-    email: string
+    username?: string
+    nickName?: string
+    email?: string
 }
