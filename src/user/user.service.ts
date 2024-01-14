@@ -1,4 +1,4 @@
-import {HttpException, HttpStatus, Inject, Injectable, Logger, Query} from '@nestjs/common';
+import {HttpException, HttpStatus, Inject, Injectable, Logger} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {User} from "@/user/entities/user.entity";
 import {Like, Repository} from "typeorm";
@@ -18,6 +18,7 @@ import {UpdateUserPasswordDto} from "@/user/dto/update-user-password.dto";
 import {UpdateUserDto} from "@/user/dto/udpate-user.dto";
 import {FindUsersByPageParams} from "@/user/interface";
 import {FindManyOptions} from "typeorm/find-options/FindManyOptions";
+import {UserListVo} from "@/user/vo/user-list.vo";
 
 @Injectable()
 export class UserService {
@@ -294,12 +295,13 @@ export class UserService {
                 where: condition
             } as FindManyOptions);
 
-            return {
-                users,
-                totalCount,
-                pageNo,
-                pageSize,
-            }
+            const vo = new UserListVo()
+            vo.users = users
+            vo.totalCount = totalCount
+            vo.pageNo = pageNo
+            vo.pageSize = pageSize
+
+            return vo
         } catch (err) {
             this.logger.error(err, 'UserService')
             throw new HttpException('获取用户列表失败！', HttpStatus.BAD_REQUEST)
