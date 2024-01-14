@@ -16,14 +16,15 @@ import {EmailService} from "@/email/email.service";
 import {RedisService} from "@/redis/redis.service";
 import {REDIS_SMS_CODE_PREFIX} from "@/common/constant";
 import {LoginUserDto} from "@/user/dto/login-user.dto";
-import { JwtService} from "@nestjs/jwt";
+import {JwtService} from "@nestjs/jwt";
 import {ConfigService} from "@nestjs/config";
 import {UserAccessTokenOpt, UserRefreshTokenOpt} from "@/user/interface";
+import {RequireLogin, RequirePermission, UserInfo} from "@/common/decorator/custom.decorator";
 
 @Controller('user')
 export class UserController {
-    constructor(private readonly userService: UserService) {
-    }
+    @Inject(UserService)
+    private readonly userService: UserService
 
     @Inject(EmailService)
     private emailService: EmailService
@@ -187,5 +188,19 @@ export class UserController {
             console.log(err)
             throw new UnauthorizedException("token 已失效, 请重新登录！")
         }
+    }
+
+    @Get('aaa')
+    @RequireLogin()
+    @RequirePermission('ccc')
+    aaa(@UserInfo('username') usernmae: string, @UserInfo() userInfo) {
+        console.log(usernmae)
+        console.log(userInfo)
+        return 'aaa'
+    }
+
+    @Get('bbb')
+    bbb() {
+        return 'bbb'
     }
 }
