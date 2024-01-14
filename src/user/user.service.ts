@@ -3,13 +3,19 @@ import {InjectRepository} from '@nestjs/typeorm';
 import {User} from "@/user/entities/user.entity";
 import {Repository} from "typeorm";
 import {RedisService} from "@/redis/redis.service";
-import {REDIS_SMS_CODE_PREFIX} from "@/common/constant";
+import {
+    REDIS_SMS_CODE_PREFIX,
+    REDIS_SMS_CODE_RESET_PASSWORD_PREFIX,
+    REDIS_SMS_CODE_UPDATE_USER_INFO_PREFIX
+} from "@/common/constant";
 import {RegisterUserDto} from "@/user/dto/register-user.dto";
 import {md5} from "@/utils";
 import {Role} from "@/user/entities/role.entity";
 import {Permission} from "@/user/entities/permission.entity";
 import {LoginUserDto} from "@/user/dto/login-user.dto";
 import {LoginUserVo} from "@/user/vo/login-user.vo";
+import {UpdateUserPasswordDto} from "@/user/dto/update-user-password.dto";
+import {UpdateUserDto} from "@/user/dto/udpate-user.dto";
 
 @Injectable()
 export class UserService {
@@ -163,6 +169,73 @@ export class UserService {
                 })
                 return arr
             }, [])
+        }
+    }
+
+    async findUserDetailById(userId: number) {
+        return await this.userRepository.findOne({
+            where: {
+                id: userId
+            }
+        })
+    }
+
+    async updatePassword(userId: number, passwordDto: UpdateUserPasswordDto) {
+        const captcha = await this.redisService.get(`${REDIS_SMS_CODE_RESET_PASSWORD_PREFIX}_${passwordDto.email}`)
+
+        if(!captcha) {
+            throw new HttpException('验证码已过期', HttpStatus.BAD_REQUEST)
+        }
+
+        if(passwordDto.captcha !== captcha) {
+            throw new HttpException('验证码不正确', HttpStatus.BAD_REQUEST)
+        }
+
+        const foundUser = await this.userRepository.findOneBy({
+            id: userId
+        })
+
+        foundUser.password = md5(passwordDto.password)
+
+        try {
+            await this.userRepository.save(foundUser)
+            return '密码修改成功！'
+        } catch (err) {
+            console.log(err)
+            this.logger.error(err, UserService)
+            return '密码修改失败！'
+        }
+    }
+
+    async update(userId: number, updateUserDto: UpdateUserDto) {
+        const captcha = await this.redisService.get(`${REDIS_SMS_CODE_UPDATE_USER_INFO_PREFIX}_${updateUserDto.email}`)
+
+        if(!captcha) {
+            throw new HttpException('验证码已过期', HttpStatus.BAD_REQUEST)
+        }
+
+        if(updateUserDto.captcha !== captcha) {
+            throw new HttpException('验证码不正确', HttpStatus.BAD_REQUEST)
+        }
+
+        const foundUser = await this.userRepository.findOneBy({
+            id: userId
+        })
+
+        if(updateUserDto.nickName) {
+            foundUser.nickName = updateUserDto.nickName
+        }
+
+        if(updateUserDto.headPic) {
+            foundUser.headPic = updateUserDto.headPic
+        }
+
+        try {
+            await this.userRepository.save(foundUser)
+            return '用户信息修改成功！'
+        } catch (err) {
+            this.logger.error(err, UserService)
+            return '用户信息修改失败！'
         }
     }
 }
