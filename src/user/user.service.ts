@@ -1,7 +1,7 @@
-import {HttpException, HttpStatus, Inject, Injectable, Logger} from '@nestjs/common';
+import {HttpException, HttpStatus, Inject, Injectable, Logger, Query} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {User} from "@/user/entities/user.entity";
-import {Repository} from "typeorm";
+import {Like, Repository} from "typeorm";
 import {RedisService} from "@/redis/redis.service";
 import {
     REDIS_SMS_CODE_PREFIX,
@@ -16,6 +16,8 @@ import {LoginUserDto} from "@/user/dto/login-user.dto";
 import {LoginUserVo} from "@/user/vo/login-user.vo";
 import {UpdateUserPasswordDto} from "@/user/dto/update-user-password.dto";
 import {UpdateUserDto} from "@/user/dto/udpate-user.dto";
+import {FindUsersByPageParams} from "@/user/interface";
+import {FindManyOptions} from "typeorm/find-options/FindManyOptions";
 
 @Injectable()
 export class UserService {
@@ -183,11 +185,11 @@ export class UserService {
     async updatePassword(userId: number, passwordDto: UpdateUserPasswordDto) {
         const captcha = await this.redisService.get(`${REDIS_SMS_CODE_RESET_PASSWORD_PREFIX}_${passwordDto.email}`)
 
-        if(!captcha) {
+        if (!captcha) {
             throw new HttpException('验证码已过期', HttpStatus.BAD_REQUEST)
         }
 
-        if(passwordDto.captcha !== captcha) {
+        if (passwordDto.captcha !== captcha) {
             throw new HttpException('验证码不正确', HttpStatus.BAD_REQUEST)
         }
 
@@ -210,11 +212,11 @@ export class UserService {
     async update(userId: number, updateUserDto: UpdateUserDto) {
         const captcha = await this.redisService.get(`${REDIS_SMS_CODE_UPDATE_USER_INFO_PREFIX}_${updateUserDto.email}`)
 
-        if(!captcha) {
+        if (!captcha) {
             throw new HttpException('验证码已过期', HttpStatus.BAD_REQUEST)
         }
 
-        if(updateUserDto.captcha !== captcha) {
+        if (updateUserDto.captcha !== captcha) {
             throw new HttpException('验证码不正确', HttpStatus.BAD_REQUEST)
         }
 
@@ -222,11 +224,11 @@ export class UserService {
             id: userId
         })
 
-        if(updateUserDto.nickName) {
+        if (updateUserDto.nickName) {
             foundUser.nickName = updateUserDto.nickName
         }
 
-        if(updateUserDto.headPic) {
+        if (updateUserDto.headPic) {
             foundUser.headPic = updateUserDto.headPic
         }
 
@@ -236,6 +238,57 @@ export class UserService {
         } catch (err) {
             this.logger.error(err, UserService)
             return '用户信息修改失败！'
+        }
+    }
+
+    async freezeById(id: number) {
+        const foundUser = await this.userRepository.findOneBy({
+            id: id
+        })
+
+        foundUser.isFrozen = true
+
+        try {
+            await this.userRepository.save(foundUser)
+            return '冻结用户成功！'
+        } catch (err) {
+            this.logger.error(err, UserService)
+            return '冻结用户失败！'
+        }
+    }
+
+    async findUsersByPage(params: FindUsersByPageParams) {
+
+        const {pageNo, pageSize, username, nickName, email} = params
+
+        const skipCount = (pageNo - 1) * pageSize
+
+        const condition: Record<string, any> = {}
+
+        if (username) {
+            condition.username = Like(`%${username}%`)
+        }
+
+        if (nickName) {
+            condition.nickName = Like(`%${nickName}%`)
+        }
+
+        if (email) {
+            condition.email = Like(`%${email}%`)
+        }
+
+        const [users, totalCount] = await this.userRepository.findAndCount({
+            select: ['id', 'username', 'nickName', 'email', 'phoneNumber', 'isFrozen', 'headPic', 'createTime'],
+            skip: skipCount,
+            take: pageSize,
+            where: condition
+        } as FindManyOptions);
+
+        return {
+            users,
+            totalCount,
+            pageNo,
+            pageSize,
         }
     }
 }

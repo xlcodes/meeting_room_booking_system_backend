@@ -8,3 +8,11 @@ export interface UserAccessTokenOpt {
 export interface UserRefreshTokenOpt {
     userId: number
 }
+
+export interface FindUsersByPageParams {
+    pageNo: number
+    pageSize: number
+    username: string
+    nickName: string
+    email: string
+}

@@ -5,13 +5,14 @@ import {
     HttpException,
     HttpStatus,
     Inject,
+    DefaultValuePipe,
     Post,
     Query,
     UnauthorizedException
 } from '@nestjs/common';
 import {UserService} from './user.service';
 import {RegisterUserDto} from "@/user/dto/register-user.dto";
-import {s8} from "@/utils";
+import {generateParseIntPipe, s8} from "@/utils";
 import {EmailService} from "@/email/email.service";
 import {RedisService} from "@/redis/redis.service";
 import {
@@ -278,6 +279,23 @@ export class UserController {
     @RequireLogin()
     async update(@UserInfo('userId') userId: number, @Body() updateUserDto: UpdateUserDto) {
         return await this.userService.update(userId, updateUserDto)
+    }
+
+    @Get('freeze')
+    @RequireLogin()
+    async freeze(@Query('id') userId: number) {
+        return await this.userService.freezeById(userId)
+    }
+
+    @Get('list')
+    async list(
+        @Query('pageNo', new DefaultValuePipe(1), generateParseIntPipe('pageNo')) pageNo: number,
+        @Query('pageSize', new DefaultValuePipe(2), generateParseIntPipe('pageSize')) pageSize: number,
+        @Query('username') username: string,
+        @Query('email') email: string,
+        @Query('nickName') nickName: string,
+    ) {
+        return await this.userService.findUsersByPage({pageNo, pageSize, username, email, nickName})
     }
 
     @Get('aaa')
