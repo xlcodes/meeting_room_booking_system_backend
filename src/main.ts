@@ -35,6 +35,9 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-doc', app, document)
 
+  // 开启跨域支持
+  app.enableCors()
+
   await app.listen(configService.get('SERVER_PORT'), () => {
     console.log(`服务启动在 ${configService.get('SERVER_PORT')} 端口！`)
   });

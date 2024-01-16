@@ -12,6 +12,8 @@ import {JwtModuleAsyncOptions} from "@nestjs/jwt/dist/interfaces/jwt-module-opti
 import {APP_GUARD} from "@nestjs/core";
 import {LoginGuard} from "@/common/guard/login.guard";
 import {PermissionGuard} from "@/common/guard/permission.guard";
+import { MeetingRoomModule } from './meeting-room/meeting-room.module';
+import {MeetingRoom} from "@/meeting-room/entities/meeting-room.entity";
 
 @Module({
     imports: [
@@ -30,7 +32,7 @@ import {PermissionGuard} from "@/common/guard/permission.guard";
                     database: configService.get('MYSQL_DB'),
                     synchronize: true,
                     logging: true,
-                    entities: [User, Role, Permission],
+                    entities: [User, Role, Permission, MeetingRoom],
                     poolSize: 10,
                     connectorPackage: 'mysql2'
                 }
@@ -52,6 +54,7 @@ import {PermissionGuard} from "@/common/guard/permission.guard";
         UserModule,
         RedisModule,
         EmailModule,
+        MeetingRoomModule,
     ],
     providers: [
         {
