@@ -30,6 +30,9 @@ import {MeetingRoom} from "@/meeting-room/entities/meeting-room.entity";
                     username: configService.get('MYSQL_USER'),
                     password: configService.get('MYSQL_PASSWORD'),
                     database: configService.get('MYSQL_DB'),
+                    // 配置数据库时区
+                    // 单纯设置这个配置可能不生效，不生效的时候进入 mysql 数据库，执行SQL: SET GLOBAL time_zone = '+8:00';
+                    timezone: '+08:00',
                     synchronize: true,
                     logging: true,
                     entities: [User, Role, Permission, MeetingRoom],
